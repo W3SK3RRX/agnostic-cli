@@ -6,7 +6,8 @@ interface AdaptOptions {
   agent?: string
 }
 
-function hasValidFrontmatter(content: string): boolean {
+function hasValidFrontmatter(raw: string): boolean {
+  const content = raw.replace(/^﻿/, '') // remove BOM (Windows)
   if (!content.startsWith('---')) return false
   const end = content.indexOf('---', 3)
   if (end === -1) return false
