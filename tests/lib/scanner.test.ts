@@ -61,6 +61,13 @@ describe('scanner', () => {
       const result = scanCore(corePath)
       expect(result[0].srcPath).toBe(src)
     })
+
+    it('ignora sub-subdiretórios (profundidade > 1)', () => {
+      mkdirSync(join(corePath, 'skills', 'audit', 'nested'), { recursive: true })
+      writeFileSync(join(corePath, 'skills', 'audit', 'nested', 'deep.md'), '# deep')
+      const result = scanCore(corePath)
+      expect(result).toHaveLength(0)
+    })
   })
 
   describe('listAdapted', () => {

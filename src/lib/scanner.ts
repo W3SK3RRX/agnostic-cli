@@ -14,23 +14,27 @@ export function scanCore(corePath: string): ScannedFile[] {
     const dir = join(corePath, type)
     if (!existsSync(dir)) continue
 
-    for (const entry of readdirSync(dir)) {
-      const entryPath = join(dir, entry)
-      const stat = statSync(entryPath)
+    for (const subdir of readdirSync(dir)) {
+      const entryPath = join(dir, subdir)
+      let stat: ReturnType<typeof statSync>
+      try {
+        stat = statSync(entryPath)
+      } catch {
+        continue
+      }
 
       if (stat.isDirectory()) {
-        if (!existsSync(entryPath)) continue
         for (const file of readdirSync(entryPath)) {
           if (!file.endsWith('.md')) continue
           result.push({
-            name: `${entry}-${file.replace(/\.md$/, '')}`,
+            name: `${subdir}-${file.replace(/\.md$/, '')}`,
             srcPath: join(entryPath, file),
             type,
           })
         }
-      } else if (entry.endsWith('.md')) {
+      } else if (subdir.endsWith('.md')) {
         result.push({
-          name: entry.replace(/\.md$/, ''),
+          name: subdir.replace(/\.md$/, ''),
           srcPath: entryPath,
           type,
         })
@@ -44,5 +48,7 @@ export function scanCore(corePath: string): ScannedFile[] {
 export function listAdapted(corePath: string, type: 'agents' | 'skills'): string[] {
   const dir = join(corePath, '.adapted', type)
   if (!existsSync(dir)) return []
-  return readdirSync(dir).filter(f => f.endsWith('.md')).map(f => f.replace(/\.md$/, ''))
+  return readdirSync(dir)
+    .filter(f => f.endsWith('.md') && statSync(join(dir, f)).isFile())
+    .map(f => f.replace(/\.md$/, ''))
 }
