@@ -37,7 +37,7 @@ describe('linker', () => {
     expect(existsSync(dest)).toBe(true)
   })
 
-  it('não sobrescreve destino existente sem erro', () => {
+  it('sobrescreve arquivo de destino existente', () => {
     const src = join(base, 'src.md')
     const dest = join(base, 'dest.md')
     writeFileSync(src, '# novo')
