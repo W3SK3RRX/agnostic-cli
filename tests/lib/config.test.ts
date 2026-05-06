@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdirSync, rmSync } from 'fs'
+import { mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { getCorePath, readProfile, writeProfile } from '../../src/lib/config'
@@ -32,5 +32,11 @@ describe('config', () => {
   it('getCorePath retorna agnosticCorePath do profile', () => {
     writeProfile({ agnosticCorePath: '/dev/agnostic-core' }, base)
     expect(getCorePath(base)).toBe('/dev/agnostic-core')
+  })
+
+  it('readProfile retorna null para JSON malformado', () => {
+    mkdirSync(join(base, '.config', 'agnostic'), { recursive: true })
+    writeFileSync(join(base, '.config', 'agnostic', 'profile.json'), 'não é json válido')
+    expect(readProfile(base)).toBeNull()
   })
 })

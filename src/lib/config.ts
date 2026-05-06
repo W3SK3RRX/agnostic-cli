@@ -18,7 +18,13 @@ function profilePath(base = homedir()): string {
 export function readProfile(base = homedir()): AgnosticProfile | null {
   const path = profilePath(base)
   if (!existsSync(path)) return null
-  return JSON.parse(readFileSync(path, 'utf-8')) as AgnosticProfile
+  try {
+    const parsed = JSON.parse(readFileSync(path, 'utf-8'))
+    if (typeof parsed?.agnosticCorePath !== 'string') return null
+    return parsed as AgnosticProfile
+  } catch {
+    return null
+  }
 }
 
 export function writeProfile(profile: AgnosticProfile, base = homedir()): void {
