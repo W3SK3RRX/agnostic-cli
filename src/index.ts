@@ -5,7 +5,8 @@ import { configGetCommand, configSetCommand, ensureCorePath } from './commands/c
 import { initCommand } from './commands/init.js'
 
 const program = new Command()
-program.name('agnostic').description('Bootstrap de projetos com agentes Claude Code').version('0.1.0')
+const { version } = await import('../package.json', { assert: { type: 'json' } })
+program.name('agnostic').description('Bootstrap de projetos com agentes Claude Code').version(version)
 
 program
   .command('init')
