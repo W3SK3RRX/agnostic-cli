@@ -6,8 +6,8 @@
     "agnostic": "./src/index.ts"
   },
   "scripts": {
-    "test": "node --test",
-    "start": "node --import tsx src/index.ts"
+    "test": "bun test",
+    "start": "bun src/index.ts"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.0.0",
@@ -17,7 +17,6 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsx": "^4.21.0",
     "typescript": "^5.4.0"
   }
 }
