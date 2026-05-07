@@ -3,6 +3,7 @@ import { Command } from 'commander'
 import { adaptCommand } from './commands/adapt.js'
 import { configGetCommand, configSetCommand, ensureCorePath } from './commands/config.js'
 import { initCommand } from './commands/init.js'
+import { updateCommand } from './commands/update.js'
 
 const program = new Command()
 const { version } = await import('../package.json', { assert: { type: 'json' } })
@@ -26,6 +27,14 @@ program
   .action(async options => {
     const corePath = await ensureCorePath()
     await adaptCommand(corePath, options)
+  })
+
+program
+  .command('update')
+  .description('Re-adapta o agnostic-core e reinstala arquivos no projeto atual')
+  .action(async () => {
+    const corePath = await ensureCorePath()
+    await updateCommand(corePath, process.cwd())
   })
 
 const configCmd = program.command('config').description('Gerencia configuração do agnostic')
