@@ -25,9 +25,9 @@ export function detectStack(projectDir: string): Stack {
 }
 
 export const STACK_AGENTS: Record<Stack, string[]> = {
-  react: ['frontend-html-css-audit', 'frontend-accessibility', 'audit-systematic-debugging'],
-  node: ['backend-rest-api-design', 'backend-error-handling', 'security-api-hardening'],
-  python: ['backend-rest-api-design', 'security-owasp-checklist'],
-  rust: ['security-owasp-checklist'],
+  react:   ['reviewers-frontend-reviewer', 'specialists-seo-specialist', 'reviewers-code-inspector'],
+  node:    ['reviewers-architecture-reviewer', 'reviewers-security-reviewer', 'reviewers-code-inspector'],
+  python:  ['reviewers-security-reviewer', 'reviewers-code-inspector'],
+  rust:    ['reviewers-security-reviewer'],
   unknown: [],
 }
