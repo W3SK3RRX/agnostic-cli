@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { detectStack, STACK_AGENTS } from '../lib/detect-stack.js'
 import { linkFile } from '../lib/linker.js'
+import { generateManifest, writeManifest } from '../lib/manifest.js'
 import { readPreset } from '../lib/presets.js'
 import { listAdapted } from '../lib/scanner.js'
 import { generateClaudeMd } from '../lib/templates.js'
@@ -22,6 +23,8 @@ export async function initCommand(corePath: string, projectDir: string, options:
     process.exit(1)
   }
 
+  const stack = detectStack(projectDir)
+
   let agents: string[]
   let skills: string[]
 
@@ -37,7 +40,6 @@ export async function initCommand(corePath: string, projectDir: string, options:
     agents = listAdapted(corePath, 'agents')
     skills = listAdapted(corePath, 'skills')
   } else {
-    const stack = detectStack(projectDir)
     const recommended = STACK_AGENTS[stack]
     agents = await selectItems(corePath, 'agents', recommended)
     skills = await selectItems(corePath, 'skills', [])
@@ -48,7 +50,13 @@ export async function initCommand(corePath: string, projectDir: string, options:
 
   let useCopy = options.copy ?? false
 
-  for (const [type, list] of [['agents', agents], ['skills', skills]] as const) {
+  const installedAgents: Array<{ name: string; adaptedPath: string; installType: 'symlink' | 'copy' }> = []
+  const installedSkills: Array<{ name: string; adaptedPath: string; installType: 'symlink' | 'copy' }> = []
+
+  for (const [type, list, installed] of [
+    ['agents', agents, installedAgents],
+    ['skills', skills, installedSkills],
+  ] as const) {
     for (const item of list) {
       const src = join(corePath, '.adapted', type, `${item}.md`)
       if (!existsSync(src)) {
@@ -58,6 +66,7 @@ export async function initCommand(corePath: string, projectDir: string, options:
       const dest = join(projectDir, '.claude', type, `${item}.md`)
       const result = linkFile(src, dest, useCopy)
       if (result.success) {
+        installed.push({ name: item, adaptedPath: src, installType: result.method })
         console.log(chalk.green(`✓ ${result.method === 'symlink' ? 'linked' : 'copied'}: ${type}/${item}.md`))
       } else if (result.error === 'EPERM') {
         console.log(chalk.yellow(`⚠ symlink falhou (sem permissão): ${type}/${item}.md`))
@@ -65,7 +74,12 @@ export async function initCommand(corePath: string, projectDir: string, options:
         if (fallback) {
           useCopy = true
           const retry = linkFile(src, dest, true)
-          console.log(retry.success ? chalk.green(`✓ copied: ${type}/${item}.md`) : chalk.red(`✗ failed: ${type}/${item}.md`))
+          if (retry.success) {
+            installed.push({ name: item, adaptedPath: src, installType: 'copy' })
+            console.log(chalk.green(`✓ copied: ${type}/${item}.md`))
+          } else {
+            console.log(chalk.red(`✗ failed: ${type}/${item}.md`))
+          }
         }
       } else {
         console.log(chalk.red(`✗ failed: ${type}/${item}.md — ${result.error}`))
@@ -74,7 +88,6 @@ export async function initCommand(corePath: string, projectDir: string, options:
   }
 
   const claudeMdPath = join(projectDir, 'CLAUDE.md')
-  const stack = detectStack(projectDir)
   if (!existsSync(claudeMdPath)) {
     writeFileSync(claudeMdPath, generateClaudeMd(stack))
     console.log(chalk.green('✓ CLAUDE.md gerado'))
@@ -87,4 +100,8 @@ export async function initCommand(corePath: string, projectDir: string, options:
       console.log(chalk.yellow('⚠ CLAUDE.md mantido sem alteração'))
     }
   }
+
+  const manifest = generateManifest(installedAgents, installedSkills, stack)
+  writeManifest(manifest, projectDir)
+  console.log(chalk.gray('  manifest: .claude/agnostic-manifest.json'))
 }
