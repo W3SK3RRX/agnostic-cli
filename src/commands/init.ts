@@ -1,38 +1,18 @@
-import { checkbox, confirm } from '@inquirer/prompts'
+import { confirm } from '@inquirer/prompts'
 import chalk from 'chalk'
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { detectStack, STACK_AGENTS } from '../lib/detect-stack.js'
 import { linkFile } from '../lib/linker.js'
 import { readPreset } from '../lib/presets.js'
+import { listAdapted } from '../lib/scanner.js'
+import { generateClaudeMd } from '../lib/templates.js'
+import { selectItems } from './shared.js'
 
 interface InitOptions {
   preset?: string
   all?: boolean
   copy?: boolean
-}
-
-function listAdapted(corePath: string, type: 'agents' | 'skills'): string[] {
-  const dir = join(corePath, '.adapted', type)
-  if (!existsSync(dir)) return []
-  return readdirSync(dir).filter(f => f.endsWith('.md')).map(f => f.replace('.md', ''))
-}
-
-function generateClaudeMd(stack: string): string {
-  return `# Projeto\n\nStack: ${stack}\n\n---\n\n## Instruções\n\n(Descreva as regras do projeto aqui)\n\n---\n\n## Arquitetura\n\n(Descreva a estrutura de arquivos aqui)\n`
-}
-
-async function selectItems(
-  corePath: string,
-  type: 'agents' | 'skills',
-  recommended: string[],
-): Promise<string[]> {
-  const items = listAdapted(corePath, type)
-  if (items.length === 0) return []
-  return checkbox({
-    message: `Selecione os ${type} a instalar:`,
-    choices: items.map(i => ({ value: i, checked: recommended.includes(i) })),
-  })
 }
 
 export async function initCommand(corePath: string, projectDir: string, options: InitOptions): Promise<void> {
@@ -94,13 +74,14 @@ export async function initCommand(corePath: string, projectDir: string, options:
   }
 
   const claudeMdPath = join(projectDir, 'CLAUDE.md')
+  const stack = detectStack(projectDir)
   if (!existsSync(claudeMdPath)) {
-    writeFileSync(claudeMdPath, generateClaudeMd(detectStack(projectDir)))
+    writeFileSync(claudeMdPath, generateClaudeMd(stack))
     console.log(chalk.green('✓ CLAUDE.md gerado'))
   } else {
     const overwrite = await confirm({ message: 'CLAUDE.md já existe. Sobrescrever?' })
     if (overwrite) {
-      writeFileSync(claudeMdPath, generateClaudeMd(detectStack(projectDir)))
+      writeFileSync(claudeMdPath, generateClaudeMd(stack))
       console.log(chalk.green('✓ CLAUDE.md sobrescrito'))
     } else {
       console.log(chalk.yellow('⚠ CLAUDE.md mantido sem alteração'))
