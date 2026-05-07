@@ -3,6 +3,7 @@ import { Command } from 'commander'
 import { adaptCommand } from './commands/adapt.js'
 import { configGetCommand, configSetCommand, ensureCorePath } from './commands/config.js'
 import { initCommand } from './commands/init.js'
+import { presetCreateCommand, presetListCommand } from './commands/preset.js'
 import { updateCommand } from './commands/update.js'
 
 const program = new Command()
@@ -36,6 +37,21 @@ program
     const corePath = await ensureCorePath()
     await updateCommand(corePath, process.cwd())
   })
+
+const presetCmd = program.command('preset').description('Gerencia presets de agents e skills')
+
+presetCmd
+  .command('create <name>')
+  .description('Cria um preset interativamente')
+  .action(async (name: string) => {
+    const corePath = await ensureCorePath()
+    await presetCreateCommand(name, corePath)
+  })
+
+presetCmd
+  .command('list')
+  .description('Lista presets salvos')
+  .action(presetListCommand)
 
 const configCmd = program.command('config').description('Gerencia configuração do agnostic')
 
