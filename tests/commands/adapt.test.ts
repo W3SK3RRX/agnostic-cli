@@ -71,4 +71,16 @@ describe('adaptCommand', () => {
 
     await expect(adaptCommand(corePath, {})).resolves.toBeUndefined()
   })
+
+  it('processa arquivo em subdiretório com nome prefixado', async () => {
+    mkdirSync(join(corePath, 'agents', 'reviewers'), { recursive: true })
+    const content = '---\nname: security-reviewer\ndescription: Revisa segurança\n---\n# Content'
+    writeFileSync(join(corePath, 'agents', 'reviewers', 'security-reviewer.md'), content)
+
+    await adaptCommand(corePath, {})
+
+    const adaptedPath = join(corePath, '.adapted', 'agents', 'reviewers-security-reviewer.md')
+    expect(existsSync(adaptedPath)).toBe(true)
+    expect(readFileSync(adaptedPath, 'utf-8')).toBe(content)
+  })
 })
