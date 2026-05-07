@@ -2,7 +2,7 @@
 
 > Bootstrap de projetos com agentes Claude Code — instala agents e skills do [agnostic-core](https://github.com/paulinett1528-dev/agnostic-core) em qualquer projeto com um comando.
 
-**Versão:** 0.1.0 · **Runtime:** [Bun](https://bun.sh)
+**Versão:** 0.2.0 · **Runtime:** [Bun](https://bun.sh)
 
 ---
 
@@ -33,7 +33,7 @@ Isso registra o comando `agnostic` globalmente. Para verificar:
 
 ```sh
 agnostic --version
-# 0.1.0
+# 0.2.0
 ```
 
 Para desinstalar: `bun unlink agnostic-cli`
@@ -107,10 +107,10 @@ agnostic init --preset <nome>      # usa um preset salvo
 
 | Stack detectada | Agents pré-selecionados |
 |---|---|
-| React (`react` em deps) | `frontend-html-css-audit`, `frontend-accessibility`, `audit-systematic-debugging` |
-| Node (qualquer `package.json` sem react) | `backend-rest-api-design`, `backend-error-handling`, `security-api-hardening` |
-| Python (`pyproject.toml` ou `requirements.txt`) | `backend-rest-api-design`, `security-owasp-checklist` |
-| Rust (`Cargo.toml`) | `security-owasp-checklist` |
+| React (`react` em deps) | `reviewers-frontend-reviewer`, `specialists-seo-specialist`, `reviewers-code-inspector` |
+| Node (qualquer `package.json` sem react) | `reviewers-architecture-reviewer`, `reviewers-security-reviewer`, `reviewers-code-inspector` |
+| Python (`pyproject.toml` ou `requirements.txt`) | `reviewers-security-reviewer`, `reviewers-code-inspector` |
+| Rust (`Cargo.toml`) | `reviewers-security-reviewer` |
 | Desconhecido | nenhum pré-selecionado |
 
 ---
@@ -130,6 +130,50 @@ agnostic adapt --agent <nome>      # processa apenas um agente específico
 - Não tem frontmatter ou está incompleto → recebe stub com `description: "" # TODO` (`⚠ stub generated`)
 
 Rode `agnostic adapt` sempre que adicionar novos arquivos ao `agnostic-core`. É idempotente — arquivos já válidos não são tocados.
+
+---
+
+### `agnostic update`
+
+Re-executa `adapt` e reinstala todos os arquivos já presentes no projeto atual.
+
+```
+agnostic update
+```
+
+**O que acontece:**
+
+1. Re-roda `agnostic adapt` — atualiza `.adapted/` com o estado atual do agnostic-core
+2. Inspeciona `.claude/agents/` e `.claude/skills/` no projeto corrente
+3. Para cada arquivo instalado como cópia, sobrescreve com a versão mais recente de `.adapted/`
+4. Arquivos instalados como symlinks já apontam para `.adapted/` — nenhuma ação necessária
+5. Exibe resumo dos arquivos atualizados e avisos para arquivos que não existem mais em `.adapted/`
+
+---
+
+### `agnostic preset`
+
+Cria e lista presets de agents/skills para tipos de projeto.
+
+```
+agnostic preset create <nome>   # cria um novo preset interativamente
+agnostic preset list            # lista presets salvos com contagem de itens
+```
+
+**Criar um preset:**
+
+```sh
+agnostic preset create node-api
+# [checklist de agents] → selecione
+# [checklist de skills] → selecione
+# ✓ preset "node-api" salvo
+```
+
+Presets são salvos em `~/.config/agnostic/presets/<nome>.json`. Para usar:
+
+```sh
+agnostic init --preset node-api
+```
 
 ---
 
@@ -166,18 +210,28 @@ Os presets ficam em `~/.config/agnostic/presets/<nome>.json`:
 
 ```json
 {
-  "agents": ["code-inspector", "security-reviewer"],
+  "agents": ["reviewers-code-inspector", "reviewers-security-reviewer"],
   "skills": ["backend-rest-api-design", "security-api-hardening"]
 }
 ```
 
-Para usar:
+**Criar um preset:**
+
+```sh
+agnostic preset create node-api
+```
+
+**Listar presets salvos:**
+
+```sh
+agnostic preset list
+```
+
+**Usar um preset no `init`:**
 
 ```sh
 agnostic init --preset node-api
 ```
-
-Atualmente os presets são criados e editados manualmente. A criação via CLI está no roadmap.
 
 ---
 
@@ -195,9 +249,9 @@ Atualmente os presets são criados e editados manualmente. A criação via CLI e
 
 ---
 
-## Fora de escopo (v0.1.0)
+## Fora de escopo (v0.2.0)
 
-- `agnostic update` — sincronizar agents já instalados quando o agnostic-core mudar
-- Criação de presets via CLI
+- `agnostic preset delete` — remoção de presets via CLI
 - Publicação no npm
 - Suporte a múltiplos perfis
+- Rastreamento multi-projeto para `agnostic update`

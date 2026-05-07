@@ -25,7 +25,9 @@ bun test
 # lib/linker.test.ts: 4 passed
 # lib/detect-stack.test.ts: 8 passed
 # lib/presets.test.ts: 5 passed
-# commands/adapt.test.ts: 6 passed
+# lib/scanner.test.ts: 9 passed
+# lib/templates.test.ts: 8 passed
+# commands/adapt.test.ts: 7 passed
 # commands/config.test.ts: 2 passed
 ```
 
@@ -48,14 +50,19 @@ O projeto separa responsabilidades em duas camadas:
 | `linker.ts` | Cria symlinks ou cópias; retorna `LinkResult` tipado |
 | `detect-stack.ts` | Detecta stack pelo manifesto do projeto; exporta `STACK_AGENTS` |
 | `presets.ts` | Lê/escreve presets em `~/.config/agnostic/presets/` |
+| `scanner.ts` | Varre `agents/` e `skills/` do agnostic-core (recursivo 1 nível); exporta `scanCore` e `listAdapted` |
+| `templates.ts` | Gera `CLAUDE.md` por stack com seções e skills relevantes pré-mapeadas |
 
 **`src/commands/`** — orquestração: usa as libs, chama `@inquirer/prompts`, imprime com `chalk`. Não contêm lógica de negócio.
 
 | Arquivo | Responsabilidade |
 |---|---|
 | `config.ts` | Subcomandos `config set/get` + helper `ensureCorePath` |
-| `adapt.ts` | Fluxo `agnostic adapt` (scan de frontmatter, geração de stubs) |
+| `adapt.ts` | Fluxo `agnostic adapt` (usa `scanCore`, geração de stubs) |
 | `init.ts` | Fluxo `agnostic init` (seleção, linking, CLAUDE.md) |
+| `update.ts` | Fluxo `agnostic update` (re-adapt + reinstalação dos arquivos em `.claude/`) |
+| `preset.ts` | Subcomandos `preset create <nome>` e `preset list` |
+| `shared.ts` | `selectItems` — UI de checklist compartilhada entre `init` e `preset` |
 
 **`src/index.ts`** — entry point, apenas registra os comandos no `commander`.
 
@@ -165,4 +172,4 @@ agnostic-core/
     └── minha-skill.md        ← um arquivo por skill
 ```
 
-Não crie subpastas dentro de `agents/` ou `skills/` — o `agnostic adapt` lê apenas o nível raiz de cada diretório.
+O `agnostic adapt` varre subdiretórios de primeiro nível dentro de `agents/` e `skills/`. Arquivos em `agents/reviewers/meu-agent.md` são instalados com o nome `reviewers-meu-agent` (prefixo `<subdir>-`). Não crie sub-subdiretórios (profundidade > 1) — eles são ignorados pelo scanner.
