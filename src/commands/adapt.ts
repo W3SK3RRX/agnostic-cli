@@ -25,6 +25,19 @@ export async function adaptCommand(corePath: string, options: AdaptOptions): Pro
   if (!existsSync(adaptedDir)) mkdirSync(adaptedDir, { recursive: true })
 
   const files = scanCore(corePath)
+
+  if (files.length === 0) {
+    console.log(chalk.yellow(`⚠ Nenhum arquivo encontrado em ${corePath}/agents/ ou ${corePath}/skills/`))
+    console.log(chalk.gray('  Rode `agnostic doctor` para diagnosticar o estado do corePath.'))
+    return
+  }
+
+  if (options.agent && !files.some(f => f.name === options.agent)) {
+    console.error(chalk.red(`✗ Agente "${options.agent}" não encontrado no core.`))
+    console.error(chalk.gray(`  Disponíveis: ${files.filter(f => f.type === 'agents').map(f => f.name).slice(0, 10).join(', ')}${files.filter(f => f.type === 'agents').length > 10 ? '...' : ''}`))
+    process.exit(1)
+  }
+
   for (const file of files) {
     if (options.agent && file.name !== options.agent) continue
 

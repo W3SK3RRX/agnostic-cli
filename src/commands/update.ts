@@ -4,19 +4,29 @@ import { join } from 'path'
 import { detectStack } from '../lib/detect-stack.js'
 import { linkFile } from '../lib/linker.js'
 import { generateManifest, writeManifest } from '../lib/manifest.js'
+import { scanCore } from '../lib/scanner.js'
 import { adaptCommand } from './adapt.js'
 
 export async function updateCommand(corePath: string, projectDir: string): Promise<void> {
   console.log(chalk.blue('↻ Re-adaptando agnostic-core...'))
   await adaptCommand(corePath, {})
 
+  if (scanCore(corePath).length === 0) {
+    console.error(chalk.red('✗ corePath não tem agents/ nem skills/ com conteúdo. Update abortado.'))
+    console.error(chalk.gray('  Rode `agnostic doctor` para diagnosticar.'))
+    return
+  }
+
   const claudeDir = join(projectDir, '.claude')
   if (!existsSync(claudeDir)) {
-    console.log(chalk.yellow('⚠ .claude/ não encontrado — rode `agnostic init` primeiro.'))
+    console.log(chalk.yellow('⚠ .claude/ não encontrado neste projeto.'))
+    console.log(chalk.gray('  Rode `agnostic init` antes de `agnostic update`.'))
     return
   }
 
   let updated = 0
+  const orphans: string[] = []
+
   for (const type of ['agents', 'skills'] as const) {
     const installedDir = join(claudeDir, type)
     if (!existsSync(installedDir)) continue
@@ -26,7 +36,7 @@ export async function updateCommand(corePath: string, projectDir: string): Promi
       const src = join(corePath, '.adapted', type, file)
 
       if (!existsSync(src)) {
-        console.log(chalk.yellow(`⚠ skipped: ${type}/${file} (não encontrado em .adapted/)`))
+        orphans.push(`${type}/${file}`)
         continue
       }
 
@@ -44,6 +54,14 @@ export async function updateCommand(corePath: string, projectDir: string): Promi
         console.log(chalk.red(`✗ failed: ${type}/${file} — ${result.error}`))
       }
     }
+  }
+
+  if (orphans.length > 0) {
+    console.log()
+    console.log(chalk.yellow(`⚠ ${orphans.length} arquivo(s) instalado(s) não existem mais no core atual:`))
+    for (const o of orphans) console.log(chalk.gray(`  - ${o}`))
+    console.log(chalk.gray('  Esses arquivos vieram de um core diferente ou foram removidos.'))
+    console.log(chalk.gray('  Para limpar, remova-os de .claude/agents ou .claude/skills e rode `agnostic init`.'))
   }
 
   const installedAgents = buildInstalledList(claudeDir, 'agents', corePath)

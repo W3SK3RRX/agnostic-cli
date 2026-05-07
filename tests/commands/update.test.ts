@@ -60,3 +60,37 @@ describe('updateCommand manifest', () => {
     expect(manifest.agents[0].role).toBe('reviewers')
   })
 })
+
+describe('updateCommand orfãos', () => {
+  it('lista arquivos órfãos sem abortar update', async () => {
+    makeAgentInCore('reviewers', 'security-reviewer.md', 'Revisa vulnerabilidades')
+    makeAdaptedAgent('reviewers-security-reviewer', 'Revisa vulnerabilidades')
+    installCopiedAgent('reviewers-security-reviewer')
+
+    mkdirSync(join(projectDir, '.claude', 'agents'), { recursive: true })
+    writeFileSync(
+      join(projectDir, '.claude', 'agents', 'orfao.md'),
+      '---\nname: orfao\ndescription: x\n---\n# x',
+    )
+
+    await updateCommand(corePath, projectDir)
+
+    expect(existsSync(join(projectDir, '.claude', 'agents', 'reviewers-security-reviewer.md'))).toBe(true)
+    expect(existsSync(join(projectDir, '.claude', 'agents', 'orfao.md'))).toBe(true)
+
+    const manifest = JSON.parse(readFileSync(join(projectDir, '.claude', 'agnostic-manifest.json'), 'utf-8'))
+    expect(manifest.agents.map((a: { name: string }) => a.name).sort()).toEqual([
+      'orfao',
+      'reviewers-security-reviewer',
+    ])
+  })
+
+  it('aborta com mensagem clara quando corePath não tem agents/ nem skills/', async () => {
+    rmSync(corePath, { recursive: true, force: true })
+    mkdirSync(corePath, { recursive: true })
+
+    await updateCommand(corePath, projectDir)
+
+    expect(existsSync(join(projectDir, '.claude'))).toBe(false)
+  })
+})

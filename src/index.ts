@@ -2,6 +2,7 @@
 import { Command } from 'commander'
 import { adaptCommand } from './commands/adapt.js'
 import { configGetCommand, configSetCommand, ensureCorePath } from './commands/config.js'
+import { doctorCommand } from './commands/doctor.js'
 import { initCommand } from './commands/init.js'
 import { presetCreateCommand, presetListCommand } from './commands/preset.js'
 import { updateCommand } from './commands/update.js'
@@ -36,6 +37,13 @@ program
   .action(async () => {
     const corePath = await ensureCorePath()
     await updateCommand(corePath, process.cwd())
+  })
+
+program
+  .command('doctor')
+  .description('Diagnostica a configuração do agnostic e sugere próximos passos')
+  .action(async () => {
+    await doctorCommand(process.cwd())
   })
 
 const presetCmd = program.command('preset').description('Gerencia presets de agents e skills')

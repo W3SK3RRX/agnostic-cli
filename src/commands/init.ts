@@ -6,8 +6,9 @@ import { detectStack, STACK_AGENTS } from '../lib/detect-stack.js'
 import { linkFile } from '../lib/linker.js'
 import { generateManifest, writeManifest } from '../lib/manifest.js'
 import { readPreset } from '../lib/presets.js'
-import { listAdapted } from '../lib/scanner.js'
+import { listAdapted, scanCore } from '../lib/scanner.js'
 import { generateClaudeMd } from '../lib/templates.js'
+import { adaptCommand } from './adapt.js'
 import { selectItems } from './shared.js'
 
 interface InitOptions {
@@ -18,9 +19,14 @@ interface InitOptions {
 
 export async function initCommand(corePath: string, projectDir: string, options: InitOptions): Promise<void> {
   const adaptedDir = join(corePath, '.adapted')
-  if (!existsSync(adaptedDir)) {
-    console.error(chalk.red('✗ .adapted/ não encontrado. Rode `agnostic adapt` primeiro.'))
-    process.exit(1)
+  if (!existsSync(adaptedDir) || listAdapted(corePath, 'agents').length + listAdapted(corePath, 'skills').length === 0) {
+    if (scanCore(corePath).length === 0) {
+      console.error(chalk.red(`✗ corePath não tem agents/ nem skills/ com conteúdo: ${corePath}`))
+      console.error(chalk.gray('  Rode `agnostic doctor` para diagnosticar.'))
+      process.exit(1)
+    }
+    console.log(chalk.blue('↻ .adapted/ ausente — rodando adapt automaticamente...'))
+    await adaptCommand(corePath, {})
   }
 
   const stack = detectStack(projectDir)

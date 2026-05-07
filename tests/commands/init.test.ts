@@ -42,3 +42,20 @@ describe('initCommand manifest', () => {
     expect(manifest.agents[0].installType).toBe('copy')
   })
 })
+
+describe('initCommand auto-bootstrap', () => {
+  it('roda adapt automaticamente quando .adapted/ está vazio mas core tem fontes', async () => {
+    rmSync(corePath, { recursive: true, force: true })
+    const agentDir = join(corePath, 'agents', 'reviewers')
+    mkdirSync(agentDir, { recursive: true })
+    writeFileSync(
+      join(agentDir, 'sec.md'),
+      '---\nname: reviewers-sec\ndescription: revisa\n---\n# x',
+    )
+
+    await initCommand(corePath, projectDir, { all: true, copy: true })
+
+    expect(existsSync(join(corePath, '.adapted', 'agents', 'reviewers-sec.md'))).toBe(true)
+    expect(existsSync(join(projectDir, '.claude', 'agents', 'reviewers-sec.md'))).toBe(true)
+  })
+})

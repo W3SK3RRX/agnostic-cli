@@ -83,4 +83,14 @@ describe('adaptCommand', () => {
     expect(existsSync(adaptedPath)).toBe(true)
     expect(readFileSync(adaptedPath, 'utf-8')).toBe(content)
   })
+
+  it('avisa quando não há arquivos para adaptar (corePath vazio)', async () => {
+    rmSync(join(corePath, 'agents'), { recursive: true })
+    rmSync(join(corePath, 'skills'), { recursive: true })
+
+    await adaptCommand(corePath, {})
+
+    expect(existsSync(join(corePath, '.adapted'))).toBe(true)
+    expect(existsSync(join(corePath, '.adapted', 'agents'))).toBe(false)
+  })
 })

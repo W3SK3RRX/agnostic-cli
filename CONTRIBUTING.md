@@ -21,14 +21,7 @@ Para verificar que tudo funciona:
 
 ```sh
 bun test
-# lib/config.test.ts: 5 passed
-# lib/linker.test.ts: 4 passed
-# lib/detect-stack.test.ts: 8 passed
-# lib/presets.test.ts: 5 passed
-# lib/scanner.test.ts: 9 passed
-# lib/templates.test.ts: 8 passed
-# commands/adapt.test.ts: 7 passed
-# commands/config.test.ts: 2 passed
+# 77 pass / 0 fail (13 arquivos de teste)
 ```
 
 Para rodar o CLI localmente sem instalar globalmente:
@@ -47,8 +40,11 @@ O projeto separa responsabilidades em duas camadas:
 | Arquivo | Responsabilidade |
 |---|---|
 | `config.ts` | Lê/escreve `~/.config/agnostic/profile.json` |
+| `paths.ts` | `expandPath` — normaliza `~`, paths relativos e absolutos |
+| `bootstrap.ts` | Auto-clone do `agnostic-core` (`cloneCore`, `defaultCoreDir`, `isGitAvailable`) |
 | `linker.ts` | Cria symlinks ou cópias; retorna `LinkResult` tipado |
 | `detect-stack.ts` | Detecta stack pelo manifesto do projeto; exporta `STACK_AGENTS` |
+| `manifest.ts` | Gera/lê `.claude/agnostic-manifest.json` |
 | `presets.ts` | Lê/escreve presets em `~/.config/agnostic/presets/` |
 | `scanner.ts` | Varre `agents/` e `skills/` do agnostic-core (recursivo 1 nível); exporta `scanCore` e `listAdapted` |
 | `templates.ts` | Gera `CLAUDE.md` por stack com seções e skills relevantes pré-mapeadas |
@@ -57,10 +53,11 @@ O projeto separa responsabilidades em duas camadas:
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `config.ts` | Subcomandos `config set/get` + helper `ensureCorePath` |
+| `config.ts` | Subcomandos `config set/get` + `ensureCorePath` (oferta de clone ou path) |
 | `adapt.ts` | Fluxo `agnostic adapt` (usa `scanCore`, geração de stubs) |
-| `init.ts` | Fluxo `agnostic init` (seleção, linking, CLAUDE.md) |
-| `update.ts` | Fluxo `agnostic update` (re-adapt + reinstalação dos arquivos em `.claude/`) |
+| `init.ts` | Fluxo `agnostic init` (auto-adapt, seleção, linking, CLAUDE.md, manifest) |
+| `update.ts` | Fluxo `agnostic update` (re-adapt + reinstalação + detecção de órfãos) |
+| `doctor.ts` | Diagnóstico completo do estado (profile, core, adapted, projeto, manifest) |
 | `preset.ts` | Subcomandos `preset create <nome>` e `preset list` |
 | `shared.ts` | `selectItems` — UI de checklist compartilhada entre `init` e `preset` |
 
